@@ -179,3 +179,41 @@ print(f"Genes after filtering: {adata.n_vars}")
 print(f"Number of clusters: {len(adata.obs['leiden'].unique())}")
 print(f"Median UMIs per cell: {np.median(adata.obs['total_counts'])}")
 print(f"Median genes per cell: {np.median(adata.obs['n_genes_by_counts'])}")
+
+# Take 2
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import train_test_split
+
+# Use scaled data for ML
+X = adata.X  # shape: (cells, genes)
+y = adata.obs['leiden'].astype(int)  # convert cluster labels to integers
+
+# Train/test split (optional, just to check accuracy)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+rf = RandomForestClassifier(n_estimators=100, random_state=42)
+rf.fit(X_train, y_train)
+
+# Check accuracy
+print(f"Train accuracy: {rf.score(X_train, y_train):.2f}")
+print(f"Test accuracy: {rf.score(X_test, y_test):.2f}")
+
+# Feature importance per gene
+importances = rf.feature_importances_
+
+# Map to gene names
+gene_names = adata.var_names
+feature_importance_df = pd.DataFrame({
+    'gene': gene_names,
+    'importance': importances
+})
+
+# Sort by importance
+feature_importance_df = feature_importance_df.sort_values(by='importance', ascending=False)
+
+# Top DE genes
+top_genes = feature_importance_df.head(20)
+print(top_genes)
+
+
+
